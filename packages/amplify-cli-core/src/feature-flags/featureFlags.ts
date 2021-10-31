@@ -557,6 +557,7 @@ export class FeatureFlags {
         defaultValueForExistingProjects: false,
         defaultValueForNewProjects: false,
       },
+      {
         name: 'transformerVersion',
         type: 'number',
         defaultValueForExistingProjects: 1,

@@ -49,6 +49,7 @@ process.on('uncaughtException', function (error) {
   if (errorHandler) {
     errorHandler(error);
   } else {
+    console.log(JSON.stringify(errorHandler));
     // Fall back to pure console logging as we have no context, etc in this case
     if (error.message) {
       console.error(error.message);
