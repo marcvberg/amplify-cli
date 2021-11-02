@@ -35,7 +35,7 @@ function doSchemaValidation(schema: string) {
   const parsedSchema = parse(appendedSchema);
 
   let allModelDefinitions = [...parsedSchema.definitions];
-  const errors = validateModelSchema({ kind: Kind.DOCUMENT, definitions: allModelDefinitions });
+  const errors = validateModelSchema({ kind: Kind.DOCUMENT, definitions: allModelDefinitions }, true);
   if (errors && errors.length) {
     throw new SchemaValidationError(errors);
   }

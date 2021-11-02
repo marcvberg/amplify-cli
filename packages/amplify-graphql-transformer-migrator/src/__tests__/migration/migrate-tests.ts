@@ -215,24 +215,23 @@ describe('Schema migration tests', () => {
     }).toThrow('Unknown directive "versioned".');
   });
 
-  // TODO(cjihrig): This test is currently failing.
-  // it('AppSync directives are not migrated', () => {
-  //   const schema1 = `
-  //     type Todo @model @aws_api_key {
-  //       id: ID!
-  //     }`;
+  it('AppSync directives are not migrated', () => {
+    const schema1 = `
+      type Todo @model @aws_api_key {
+        id: ID!
+      }`;
 
-  //   expect(() => {
-  //     migrateAndValidate(schema1);
-  //   }).toThrow('Unknown directive "aws_api_key".');
+    expect(() => {
+      migrateAndValidate(schema1);
+    }).toThrow('Unknown directive "aws_api_key".');
 
-  //   const schema2 = `
-  //     type Todo @model @aws_iam {
-  //       id: ID!
-  //     }`;
+    const schema2 = `
+      type Todo @model @aws_iam {
+        id: ID!
+      }`;
 
-  //   expect(() => {
-  //     migrateAndValidate(schema2);
-  //   }).toThrow('Unknown directive "aws_iam".');
-  // });
+    expect(() => {
+      migrateAndValidate(schema2);
+    }).toThrow('Unknown directive "aws_iam".');
+  });
 });

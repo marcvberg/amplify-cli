@@ -107,6 +107,11 @@ scalar AuthorizationRule
 `);
 
 export const EXTRA_DIRECTIVES_DOCUMENT = parse(`
+# Allows transformer libraries to deprecate directive arguments.
+directive @deprecated(reason: String) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION | ENUM | ENUM_VALUE
+`);
+
+export const EXTRA_AUTH_DIRECTIVES_DOCUMENT = parse(`
 directive @aws_subscribe(mutations: [String!]!) on FIELD_DEFINITION
 directive @aws_auth(cognito_groups: [String!]!) on FIELD_DEFINITION
 directive @aws_api_key on FIELD_DEFINITION | OBJECT
@@ -114,9 +119,6 @@ directive @aws_iam on FIELD_DEFINITION | OBJECT
 directive @aws_oidc on FIELD_DEFINITION | OBJECT
 directive @aws_cognito_user_pools(cognito_groups: [String!]) on FIELD_DEFINITION | OBJECT
 directive @allow_public_data_access_with_api_key(in: [String!]) on OBJECT
-
-# Allows transformer libraries to deprecate directive arguments.
-directive @deprecated(reason: String) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION | ENUM | ENUM_VALUE
 `);
 
 // As query type is mandatory in the schema we've to append a dummy one if it is not present
@@ -126,10 +128,11 @@ type Query {
 }
 `);
 
-export const validateModelSchema = (doc: DocumentNode) => {
+export const validateModelSchema = (doc: DocumentNode, ignoreAppSyncAuthDirectives = false) => {
   const fullDocument = {
     kind: Kind.DOCUMENT,
-    definitions: [...EXTRA_DIRECTIVES_DOCUMENT.definitions, ...doc.definitions, ...EXTRA_SCALARS_DOCUMENT.definitions],
+    definitions: [...EXTRA_DIRECTIVES_DOCUMENT.definitions, ...doc.definitions, ...EXTRA_SCALARS_DOCUMENT.definitions,
+      ...(ignoreAppSyncAuthDirectives ? [] : EXTRA_AUTH_DIRECTIVES_DOCUMENT.definitions)],
   };
 
   const schemaDef = doc.definitions.find(d => d.kind === Kind.SCHEMA_DEFINITION) as SchemaDefinitionNode;
