@@ -19,7 +19,7 @@ import { $TSContext, exitOnNextTick } from 'amplify-cli-core';
 import { detectCustomResolvers, detectOverriddenResolvers, detectUnsupportedDirectives, graphQLUsingSQL } from './schema-inspector';
 import { validateModelSchema, SchemaValidationError } from '@aws-amplify/graphql-transformer-core';
 import { updateTransformerVersion } from './state-migrator';
-import { GRAPHQL_DIRECTIVES_SCHEMA } from './constants/graphql-directives';
+import { GRAPHQL_V1_DIRECTIVES_SCHEMA } from './constants/graphql-v1-directives';
 
 const cliToMigratorAuthMap: Map<string, string> = new Map<string, string>([
   ['API_KEY', 'apiKey'],
@@ -31,7 +31,7 @@ const cliToMigratorAuthMap: Map<string, string> = new Map<string, string>([
 const MIGRATION_URL = "<insert migration docs URL here>";
 
 function doSchemaValidation(schema: string) {
-  const appendedSchema = schema + GRAPHQL_DIRECTIVES_SCHEMA;
+  const appendedSchema = schema + GRAPHQL_V1_DIRECTIVES_SCHEMA;
   const parsedSchema = parse(appendedSchema);
 
   let allModelDefinitions = [...parsedSchema.definitions];

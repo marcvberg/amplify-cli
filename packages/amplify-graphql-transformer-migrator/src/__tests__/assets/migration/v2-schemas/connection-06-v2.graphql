@@ -1,0 +1,10 @@
+type Post @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  title: String!
+  comments: [Comment] @hasMany(limit: 50)
+}
+
+type Comment @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  content: String!
+}

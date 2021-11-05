@@ -1,4 +1,4 @@
-export const GRAPHQL_DIRECTIVES_SCHEMA = `
+export const GRAPHQL_V1_DIRECTIVES_SCHEMA = /** V1 Transformer Directive definitions as of 11/5/2021 */ `
 directive @model(
   queries: ModelQueryMap
   mutations: ModelMutationMap
@@ -75,7 +75,7 @@ input AuthRule {
   allow: AuthStrategy!
 
   # Legacy name for identityClaim
-  identityField: String @deprecated(reason: "The 'identityField' argument is replaced by the 'identityClaim'.")
+  identityField: String
 
   # Specifies the name of the provider to use for the rule. This overrides the default provider
   # when 'public' and 'private' AuthStrategy is used. Specifying a provider for 'owner' or 'groups'
@@ -109,11 +109,9 @@ input AuthRule {
 
   # Deprecated. It is recommended to use the 'operations' arguments.
   queries: [ModelQuery]
-    @deprecated(reason: "The 'queries' argument will be replaced by the 'operations' argument in a future release.")
 
   # Deprecated. It is recommended to use the 'operations' arguments.
   mutations: [ModelMutation]
-    @deprecated(reason: "The 'mutations' argument will be replaced by the 'operations' argument in a future release.")
 }
 enum AuthStrategy {
   owner
@@ -133,11 +131,11 @@ enum ModelOperation {
   delete
   read
 }
-enum ModelQuery @deprecated(reason: "ModelQuery will be replaced by the 'ModelOperation' in a future release.") {
+enum ModelQuery {
   get
   list
 }
-enum ModelMutation @deprecated(reason: "ModelMutation will be replaced by the 'ModelOperation' in a future release.") {
+enum ModelMutation {
   create
   update
   delete

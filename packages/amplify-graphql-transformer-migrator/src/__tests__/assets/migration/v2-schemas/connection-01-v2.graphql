@@ -1,0 +1,10 @@
+type Project @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  name: String
+  team: Team @hasOne
+}
+
+type Team @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  name: String!
+}

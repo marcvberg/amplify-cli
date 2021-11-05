@@ -45,7 +45,10 @@ export function migrateConnection(node: any, ast: any) {
     let typeIsList = isListType(connectionField.type);
     if (typeIsList) {
       connectionDirective.name.value = "hasMany";
-      connectionDirective.arguments.find((a: any) => a.name.value === "keyName").name.value = "indexName";
+      let keyNameArgument = connectionDirective.arguments.find((a: any) => a.name.value === "keyName");
+      if(keyNameArgument) {
+        keyNameArgument.name.value = "indexName";
+      }
     } else {
       const relatedType = getRelatedType(ast, getFieldType(connectionField));
       const isBiDirectionalRelation = relatedType.fields.some((relatedField: any) => {
