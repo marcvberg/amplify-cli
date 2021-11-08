@@ -82,6 +82,8 @@ import {
 import { FieldWrapper, InputObjectDefinitionWrapper, ObjectDefinitionWrapper } from './wrappers/object-definition-wrapper';
 import { CfnRole } from '@aws-cdk/aws-iam';
 import md5 from 'md5';
+import { printer } from 'amplify-prompts';
+import * as util from 'util';
 
 export type Nullable<T> = T | null;
 export type OptionalAndNullable<T> = Partial<T>;
@@ -1080,35 +1082,53 @@ export class ModelTransformer extends TransformerModelBase implements Transforme
     const tableName = context.resourceHelper.generateResourceName(def!.name.value);
 
     // Add parameters.
+    // Parent stack will never be null because we never create tables in the root stack
+    const parentStack: cdk.Stack = (stack as cdk.NestedStack).nestedStackParent as unknown as cdk.Stack;
     const env = context.stackManager.getParameter(ResourceConstants.PARAMETERS.Env) as cdk.CfnParameter;
-    const readIops = new cdk.CfnParameter(stack, ResourceConstants.PARAMETERS.DynamoDBModelTableReadIOPS, {
+    // if (Object.getOwnPropertyDescriptor(parentStack, ResourceConstants.PARAMETERS.DynamoDBModelTableReadIOPS)
+    printer.error(util.inspect(parentStack));
+    printer.error(util.inspect(stack));
+
+    let readIops = context.stackManager.addParameter(ResourceConstants.PARAMETERS.DynamoDBModelTableReadIOPS, {
       description: 'The number of read IOPS the table should support.',
       type: 'Number',
       default: 5,
     }).valueAsString;
-    const writeIops = new cdk.CfnParameter(stack, ResourceConstants.PARAMETERS.DynamoDBModelTableWriteIOPS, {
-      description: 'The number of write IOPS the table should support.',
-      type: 'Number',
-      default: 5,
-    }).valueAsString;
-    const billingMode = new cdk.CfnParameter(stack, ResourceConstants.PARAMETERS.DynamoDBBillingMode, {
-      description: 'Configure @model types to create DynamoDB tables with PAY_PER_REQUEST or PROVISIONED billing modes.',
-      type: 'String',
-      default: 'PAY_PER_REQUEST',
-      allowedValues: ['PAY_PER_REQUEST', 'PROVISIONED'],
-    }).valueAsString;
-    const pointInTimeRecovery = new cdk.CfnParameter(stack, ResourceConstants.PARAMETERS.DynamoDBEnablePointInTimeRecovery, {
-      description: 'Whether to enable Point in Time Recovery on the table.',
-      type: 'String',
-      default: 'false',
-      allowedValues: ['true', 'false'],
-    }).valueAsString;
-    const enableSSE = new cdk.CfnParameter(stack, ResourceConstants.PARAMETERS.DynamoDBEnableServerSideEncryption, {
-      description: 'Enable server side encryption powered by KMS.',
-      type: 'String',
-      default: 'true',
-      allowedValues: ['true', 'false'],
-    }).valueAsString;
+    let writeIops = Object.getOwnPropertyDescriptor(parentStack, ResourceConstants.PARAMETERS.DynamoDBModelTableWriteIOPS)?.value;
+    if (!writeIops) {
+      writeIops = new cdk.CfnParameter(parentStack, ResourceConstants.PARAMETERS.DynamoDBModelTableWriteIOPS, {
+        description: 'The number of write IOPS the table should support.',
+        type: 'Number',
+        default: 5,
+      }).valueAsString;
+    }
+    let billingMode = Object.getOwnPropertyDescriptor(parentStack, ResourceConstants.PARAMETERS.DynamoDBBillingMode)?.value;
+    if (!billingMode) {
+      billingMode = new cdk.CfnParameter(parentStack, ResourceConstants.PARAMETERS.DynamoDBBillingMode, {
+        description: 'Configure @model types to create DynamoDB tables with PAY_PER_REQUEST or PROVISIONED billing modes.',
+        type: 'String',
+        default: 'PAY_PER_REQUEST',
+        allowedValues: ['PAY_PER_REQUEST', 'PROVISIONED'],
+      }).valueAsString;
+    }
+    let pointInTimeRecovery = Object.getOwnPropertyDescriptor(parentStack, ResourceConstants.PARAMETERS.DynamoDBEnablePointInTimeRecovery)?.value;
+    if (!pointInTimeRecovery) {
+      pointInTimeRecovery = new cdk.CfnParameter(parentStack, ResourceConstants.PARAMETERS.DynamoDBEnablePointInTimeRecovery, {
+        description: 'Whether to enable Point in Time Recovery on the table.',
+        type: 'String',
+        default: 'false',
+        allowedValues: ['true', 'false'],
+      }).valueAsString;
+    }
+    let enableSSE = Object.getOwnPropertyDescriptor(parentStack, ResourceConstants.PARAMETERS.DynamoDBEnableServerSideEncryption)?.value;
+    if (!enableSSE) {
+      enableSSE = new cdk.CfnParameter(parentStack, ResourceConstants.PARAMETERS.DynamoDBEnableServerSideEncryption, {
+        description: 'Enable server side encryption powered by KMS.',
+        type: 'String',
+        default: 'true',
+        allowedValues: ['true', 'false'],
+      }).valueAsString;
+    }
 
     // Add conditions.
     // eslint-disable-next-line no-new
