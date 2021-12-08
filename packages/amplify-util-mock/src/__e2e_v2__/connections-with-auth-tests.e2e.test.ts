@@ -1,30 +1,32 @@
-import { ModelAuthTransformer } from 'graphql-auth-transformer';
-import { ModelConnectionTransformer } from 'graphql-connection-transformer';
-import { DynamoDBModelTransformer } from 'graphql-dynamodb-transformer';
-import { FeatureFlagProvider, GraphQLTransform } from 'graphql-transformer-core';
-import { signUpAddToGroupAndGetJwtToken } from './utils/cognito-utils';
-import { GraphQLClient } from './utils/graphql-client';
-import { deploy, launchDDBLocal, logDebug, terminateDDB } from './utils/index';
+import { AuthTransformer } from '@aws-amplify/graphql-auth-transformer';
+import { HasOneTransformer, HasManyTransformer, BelongsToTransformer, ManyToManyTransformer } from '@aws-amplify/graphql-relational-transformer';
+import { ModelTransformer } from '@aws-amplify/graphql-model-transformer';
+import { GraphQLTransform } from '@aws-amplify/graphql-transformer-core';
+import { FeatureFlagProvider } from '@aws-amplify/graphql-transformer-interfaces';
+import { signUpAddToGroupAndGetJwtToken } from '../__e2e__/utils/cognito-utils';
+import { GraphQLClient } from '../__e2e__/utils/graphql-client';
+import { deploy, launchDDBLocal, logDebug, terminateDDB } from '../__e2e__/utils/index';
 import 'isomorphic-fetch';
+import { IndexTransformer } from '@aws-amplify/graphql-index-transformer';
 
 jest.setTimeout(2000000);
 
-let GRAPHQL_ENDPOINT = undefined;
+let GRAPHQL_ENDPOINT: string;
 
 /**
  * Client 1 is logged in and is a member of the Admin group.
  */
-let GRAPHQL_CLIENT_1 = undefined;
+let GRAPHQL_CLIENT_1: GraphQLClient;
 
 /**
  * Client 2 is logged in and is a member of the Devs group.
  */
-let GRAPHQL_CLIENT_2 = undefined;
+let GRAPHQL_CLIENT_2: GraphQLClient;
 
 /**
  * Client 3 is logged in and has no group memberships.
  */
-let GRAPHQL_CLIENT_3 = undefined;
+let GRAPHQL_CLIENT_3: GraphQLClient;
 
 let USER_POOL_ID = 'y9CqgkEJe';
 
@@ -42,74 +44,76 @@ let dbPath = null;
 let server;
 
 beforeAll(async () => {
-  const validSchema = `type Post @model(
-    subscriptions: {
-        level: public
-})@auth(rules: [{ allow: owner }]) {
-    id: ID!
-    title: String!
-    author: User @connection(name: "UserPosts", keyField: "owner")
-    owner: String
+  const validSchema = `type Post @model(subscriptions: {level: public}) @auth(rules: [{allow: owner}]) {
+  id: ID!
+  title: String!
+  author: User @belongsTo
+  owner: String
 }
-type User @model(
-    subscriptions: {
-        level: public
-    }) @auth(rules: [{ allow: owner }]) {
-    id: ID!
-    posts: [Post!]! @connection(name: "UserPosts", keyField: "owner")
+
+type User @model(subscriptions: {level: public}) @auth(rules: [{allow: owner}]) {
+  id: ID!
+  posts: [Post!]! @hasMany
 }
-type FieldProtected @model(
-    subscriptions: {
-        level: public
-}){
-    id: ID!
-    owner: String
-    ownerOnly: String @auth(rules: [{ allow: owner }])
+
+type FieldProtected @model(subscriptions: {level: public}) @auth(rules: [{allow: private}]) {
+  id: ID!
+  owner: String
+  ownerOnly: String @auth(rules: [{allow: owner}])
 }
-type OpenTopLevel @model(
-    subscriptions: {
-        level: public
-}) {
-    id: ID!
-    name: String
-    owner: String
-    protected: [ConnectionProtected] @connection(name: "ProtectedConnection")
+
+type OpenTopLevel @model(subscriptions: {level: public}) @auth(rules: [{allow: private}]) {
+  id: ID!
+  name: String
+  owner: String
+  protected: [ConnectionProtected] @hasMany
 }
-type ConnectionProtected @model(
-    subscriptions: {
-        level: public
-    }
-    queries: null
-)@auth(rules: [{ allow: owner }]) {
-    id: ID!
-    name: String
-    owner: String
-    topLevel: OpenTopLevel @connection(name: "ProtectedConnection")
+
+type ConnectionProtected @model(subscriptions: {level: public}, queries: null) @auth(rules: [{allow: owner}]) {
+  id: ID!
+  name: String
+  owner: String
+  topLevel: OpenTopLevel @belongsTo
 }
-type Performance @model @auth(rules: [{ allow: groups, groups: ["Admin"]}]) {
+
+type Performance @model @auth(rules: [{allow: groups, groups: ["Admin"]}]) {
   id: ID
   performer: String!
   description: String!
   time: AWSDateTime
-  stage: Stage @connection
+  stage: Stage @hasOne
 }
-type Stage @model @auth(rules: [{ allow: groups, groups: ["Admin"]}]) {
+
+type Stage @model @auth(rules: [{allow: groups, groups: ["Admin"]}]) {
   id: ID!
   name: String!
 }
     `;
+  const modelTransformer = new ModelTransformer();
+  const indexTransformer = new IndexTransformer();
+  const hasOneTransformer = new HasOneTransformer();
+  const authTransformer = new AuthTransformer({
+    authConfig: {
+      defaultAuthentication: {
+        authenticationType: 'AMAZON_COGNITO_USER_POOLS',
+      },
+      additionalAuthenticationProviders: [],
+    },
+  });
   const transformer = new GraphQLTransform({
     transformers: [
-      new DynamoDBModelTransformer(),
-      new ModelConnectionTransformer(),
-      new ModelAuthTransformer({
-        authConfig: {
-          defaultAuthentication: {
-            authenticationType: 'AMAZON_COGNITO_USER_POOLS',
-          },
-          additionalAuthenticationProviders: [],
-        },
-      }),
+      new ModelTransformer(),
+      indexTransformer,
+      new BelongsToTransformer(),
+      new HasManyTransformer(),
+      hasOneTransformer,
+      new ManyToManyTransformer(
+        modelTransformer,
+        indexTransformer,
+        hasOneTransformer,
+        authTransformer,
+      ),
+      authTransformer,
     ],
     featureFlags: {
       getBoolean: name => (name === 'improvePluralization' ? true : false),
