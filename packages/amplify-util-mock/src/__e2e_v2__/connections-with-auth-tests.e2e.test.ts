@@ -16,6 +16,7 @@ let GRAPHQL_ENDPOINT: string;
 /**
  * Client 1 is logged in and is a member of the Admin group.
  */
+
 let GRAPHQL_CLIENT_1: GraphQLClient;
 
 /**
